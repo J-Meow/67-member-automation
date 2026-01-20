@@ -110,6 +110,9 @@ async function getChannelMemberCount(id: string) {
 async function requiredMemberCountChange(id: string) {
     return 67 - (await getChannelMemberCount(id))
 }
-console.log(await requiredMemberCountChange("C0A9KBWRNP7"))
-// await leaveChannel("C0A9KBWRNP7")
-// await joinChannel("C0A9KBWRNP7", 5)
+await leaveChannel("C0A9KBWRNP7")
+const toAdd = await requiredMemberCountChange("C0A9KBWRNP7")
+console.log(toAdd)
+for (let i = 1; i <= toAdd; i++) {
+    await joinChannel("C0A9KBWRNP7", i)
+}

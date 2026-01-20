@@ -165,19 +165,23 @@ async function botMembersOfChannel(id: string) {
     }
     return members
 }
-const botMembers = await botMembersOfChannel("C0A9KBWRNP7")
-// await leaveChannelAll("C0A9KBWRNP7")
-const toAdd = await requiredMemberCountChange("C0A9KBWRNP7")
+const channelId = ""
+// await leaveChannelAll(channelId)
+// Deno.exit(0)
+const botMembers = await botMembersOfChannel(channelId)
+const toAdd = await requiredMemberCountChange(channelId)
 console.log(toAdd)
 if (toAdd > 0) {
+    let skipped = 0
     for (let i = 1; i <= toAdd; i++) {
-        await joinChannel("C0A9KBWRNP7", i)
+        while (botMembers.includes(i + skipped)) skipped++
+        await joinChannel(channelId, i + skipped)
     }
 } else if (toAdd < 0 && botMembers.length) {
     for (let i = 1; i <= -toAdd && botMembers.length; i++) {
         const botLeaving =
             botMembers[Math.floor(Math.random() * botMembers.length)]
-        await leaveChannel("C0A9KBWRNP7", botLeaving)
+        await leaveChannel(channelId, botLeaving)
         console.log(botLeaving + " leaving channel")
         botMembers.splice(botMembers.indexOf(botLeaving), 1)
     }

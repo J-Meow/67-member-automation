@@ -36,7 +36,7 @@ for (let i = 1; i <= 99 && doTokenCheck; i++) {
         throw new Error("invalid tokens for id " + i)
     }
 }
-async function leaveChannel(id: string) {
+async function leaveChannelAll(id: string) {
     for (let i = 1; i <= 99; i++) {
         console.log(
             await (
@@ -61,6 +61,29 @@ async function leaveChannel(id: string) {
         )
         console.log(i + " left channel " + id)
     }
+}
+async function leaveChannel(id: string, botId: number) {
+    console.log(
+        await (
+            await fetch(
+                "https://hackclub.enterprise.slack.com/api/conversations.leave",
+                {
+                    headers: {
+                        "Content-Type":
+                            "multipart/form-data; boundary=----boundary",
+                        Cookie: "d=" + tokens[botId].xoxd,
+                    },
+                    body:
+                        '------boundary\r\nContent-Disposition: form-data; name="token"\r\n\r\n' +
+                        tokens[botId].xoxc +
+                        '\r\n------boundary\r\nContent-Disposition: form-data; name="channel"\r\n\r\n' +
+                        id +
+                        "\r\n------boundary--\r\n",
+                    method: "POST",
+                },
+            )
+        ).json(),
+    )
 }
 async function joinChannel(id: string, botId: number) {
     console.log(
@@ -110,9 +133,55 @@ async function getChannelMemberCount(id: string) {
 async function requiredMemberCountChange(id: string) {
     return 67 - (await getChannelMemberCount(id))
 }
-await leaveChannel("C0A9KBWRNP7")
+async function checkIfChannelMember(id: string, botId: number) {
+    return (
+        await (
+            await fetch(
+                "https://hackclub.enterprise.slack.com/api/conversations.info",
+                {
+                    headers: {
+                        "Content-Type":
+                            "multipart/form-data; boundary=----boundary",
+                        Cookie: "d=" + tokens[botId].xoxd,
+                    },
+                    body:
+                        '------boundary\r\nContent-Disposition: form-data; name="token"\r\n\r\n' +
+                        tokens[botId].xoxc +
+                        '\r\n------boundary\r\nContent-Disposition: form-data; name="channel"\r\n\r\n' +
+                        id +
+                        "\r\n------boundary--\r\n",
+                    method: "POST",
+                },
+            )
+        ).json()
+    ).channel.is_member
+}
+async function botMembersOfChannel(id: string) {
+    const members = []
+    for (let i = 1; i <= 99; i++) {
+        if (await checkIfChannelMember(id, i)) {
+            members.push(i)
+        }
+    }
+    return members
+}
+const botMembers = await botMembersOfChannel("C0A9KBWRNP7")
+// await leaveChannelAll("C0A9KBWRNP7")
 const toAdd = await requiredMemberCountChange("C0A9KBWRNP7")
 console.log(toAdd)
-for (let i = 1; i <= toAdd; i++) {
-    await joinChannel("C0A9KBWRNP7", i)
+if (toAdd > 0) {
+    for (let i = 1; i <= toAdd; i++) {
+        await joinChannel("C0A9KBWRNP7", i)
+    }
+} else if (toAdd < 0 && botMembers.length) {
+    for (let i = 1; i <= -toAdd && botMembers.length; i++) {
+        const botLeaving =
+            botMembers[Math.floor(Math.random() * botMembers.length)]
+        await leaveChannel("C0A9KBWRNP7", botLeaving)
+        console.log(botLeaving + " leaving channel")
+        botMembers.splice(botMembers.indexOf(botLeaving), 1)
+    }
+    if (botMembers.length) {
+        console.log("Too many members to 67ify")
+    }
 }

@@ -131,7 +131,7 @@ async function getChannelMemberCount(id: string) {
     return response.counts.people
 }
 async function requiredMemberCountChange(id: string) {
-    return 67 - (await getChannelMemberCount(id))
+    return 69 - (await getChannelMemberCount(id))
 }
 async function checkIfChannelMember(id: string, botId: number) {
     return (
@@ -182,6 +182,6 @@ if (toAdd > 0) {
         botMembers.splice(botMembers.indexOf(botLeaving), 1)
     }
     if (botMembers.length) {
-        console.log("Too many members to 67ify")
+        console.log("Too many members to 69ify")
     }
 }

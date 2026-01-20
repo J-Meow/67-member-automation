@@ -169,7 +169,14 @@ const channelId = ""
 // await leaveChannelAll(channelId)
 // Deno.exit(0)
 const botMembers = await botMembersOfChannel(channelId)
-const toAdd = await requiredMemberCountChange(channelId)
+let toAdd = await requiredMemberCountChange(channelId)
+console.log(`Required member count change to get to 67: ${toAdd}`)
+while (
+    toAdd < 0 &&
+    -toAdd > botMembers.filter((x) => typeof x == "number").length
+) {
+    toAdd += 100
+}
 console.log(toAdd)
 if (toAdd > 0) {
     let skipped = 0
@@ -177,15 +184,12 @@ if (toAdd > 0) {
         while (botMembers.includes(i + skipped)) skipped++
         await joinChannel(channelId, i + skipped)
     }
-} else if (toAdd < 0 && botMembers.length) {
+} else if (toAdd < 0) {
     for (let i = 1; i <= -toAdd && botMembers.length; i++) {
         const botLeaving =
             botMembers[Math.floor(Math.random() * botMembers.length)]
         await leaveChannel(channelId, botLeaving)
         console.log(botLeaving + " leaving channel")
         botMembers.splice(botMembers.indexOf(botLeaving), 1)
-    }
-    if (botMembers.length) {
-        console.log("Too many members to 67ify")
     }
 }

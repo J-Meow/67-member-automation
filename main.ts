@@ -286,9 +286,21 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
                 await sql`DELETE FROM channels WHERE ID=${channelId}`
                 leaveChannelAll(channelId!)
                 return new Response("Alt accounts leaving.")
+            case "update":
+                console.log(`Updating count in ${channelId}`)
+                if (
+                    (await sql`SELECT id FROM channels WHERE id=${channelId}`)
+                        .count == 0
+                ) {
+                    return new Response(
+                        "Channel is not currently opted into this bot. Please run `/67members enable` to opt in.",
+                    )
+                }
+                updateChannel(channelId!)
+                return new Response("Updating member count to 67")
             default:
                 return new Response(
-                    "Invalid command. Please use `/67members [enable/disable/leave]`.",
+                    "Invalid command. Please use `/67members [enable/disable/leave/update]`.",
                 )
         }
     }

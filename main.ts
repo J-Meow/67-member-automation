@@ -1,4 +1,5 @@
 import postgres from "postgres"
+import { createHmac } from "node:crypto"
 const sql = postgres()
 const edgeNodeId = "E09V59WQY1E"
 const tokenFile = await Deno.readTextFile(Deno.env.get("TOKEN_FILE_PATH")!)
@@ -167,7 +168,6 @@ async function botMembersOfChannel(id: string) {
     }
     return members
 }
-const channels = await sql`SELECT id FROM channels`
 // await leaveChannelAll(channelId)
 // Deno.exit(0)
 async function updateChannel(id: string) {
@@ -198,6 +198,60 @@ async function updateChannel(id: string) {
         }
     }
 }
-channels.forEach(async (channel) => {
-    await updateChannel(channel.id)
+async function update() {
+    const channels = await sql`SELECT id FROM channels`
+    channels.forEach(async (channel) => {
+        await updateChannel(channel.id)
+    })
+}
+const slackSigningSecret = Deno.env.get("SLACK_SIGNING_SECRET")!
+Deno.serve({ port: 11205 }, async (req: Request) => {
+    if (new URL(req.url).pathname == "/command" && req.method == "POST") {
+        const body = await req.text()
+        const timestamp = req.headers.get("x-slack-request-timestamp")!
+        const signature = req.headers.get("x-slack-signature")!
+        if (!timestamp || !signature) {
+            return new Response(null, { status: 400 })
+        }
+        if (
+            Math.abs(Math.floor(Date.now() / 1000) - parseInt(timestamp)) >
+            60 * 5
+        ) {
+            return new Response(null, { status: 400 })
+        }
+        const signString = `v0:${timestamp}:${body}`
+        const hmac = createHmac("sha256", slackSigningSecret)
+        hmac.update(signString)
+        const hashedSignString = hmac.digest("hex")
+        const correctSignature = "v0=" + hashedSignString
+        if (correctSignature != signature) {
+            return new Response(null, { status: 400 })
+        }
+        const formData = new URLSearchParams(body)
+        const text = formData.get("text")
+        const channelId = formData.get("channel_id")
+        switch (text) {
+            case "enable":
+                console.log(`Adding ${channelId} to 67ish channels`)
+                await sql`INSERT INTO channels VALUES (${channelId})`
+                update()
+                return new Response(
+                    "Success, this channel will have 67 members shortly.",
+                )
+            case "disable":
+                console.log(`Removing ${channelId} from 67ish channels`)
+                await sql`DELETE FROM channels WHERE ID=${channelId}`
+                return new Response(
+                    "Success, this channel will no longer automatically update to have 67 members. If you'd like the alt accounts to leave, run `/67members leave`.",
+                )
+            case "leave":
+                console.log(`Removing alts from ${channelId}`)
+                await sql`DELETE FROM channels WHERE ID=${channelId}`
+                leaveChannelAll(channelId!)
+                return new Response("Alt accounts leaving.")
+            default:
+        }
+    }
+    return new Response(null, { status: 404 })
 })
+update()

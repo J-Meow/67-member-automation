@@ -165,31 +165,36 @@ async function botMembersOfChannel(id: string) {
     }
     return members
 }
-const channelId = ""
+const channelId = "C09GJU0G43U"
 // await leaveChannelAll(channelId)
 // Deno.exit(0)
-const botMembers = await botMembersOfChannel(channelId)
-let toAdd = await requiredMemberCountChange(channelId)
-console.log(`Required member count change to get to 67: ${toAdd}`)
-while (
-    toAdd < 0 &&
-    -toAdd > botMembers.filter((x) => typeof x == "number").length
-) {
-    toAdd += 100
-}
-console.log(toAdd)
-if (toAdd > 0) {
-    let skipped = 0
-    for (let i = 1; i <= toAdd; i++) {
-        while (botMembers.includes(i + skipped)) skipped++
-        await joinChannel(channelId, i + skipped)
+async function updateChannel(id: string) {
+    console.log(`Starting channel update in ${id}`)
+    const botMembers = await botMembersOfChannel(id)
+    let toAdd = await requiredMemberCountChange(id)
+    console.log(`Changing member count in ${id} by ${toAdd}`)
+    while (
+        toAdd < 0 &&
+        -toAdd > botMembers.filter((x) => typeof x == "number").length
+    ) {
+        toAdd += 100
     }
-} else if (toAdd < 0) {
-    for (let i = 1; i <= -toAdd && botMembers.length; i++) {
-        const botLeaving =
-            botMembers[Math.floor(Math.random() * botMembers.length)]
-        await leaveChannel(channelId, botLeaving)
-        console.log(botLeaving + " leaving channel")
-        botMembers.splice(botMembers.indexOf(botLeaving), 1)
+    console.log(toAdd)
+    if (toAdd > 0) {
+        let skipped = 0
+        for (let i = 1; i <= toAdd; i++) {
+            while (botMembers.includes(i + skipped)) skipped++
+            await joinChannel(id, i + skipped)
+            console.log("Bot #" + (i + skipped) + " joining channel " + id)
+        }
+    } else if (toAdd < 0) {
+        for (let i = 1; i <= -toAdd && botMembers.length; i++) {
+            const botLeaving =
+                botMembers[Math.floor(Math.random() * botMembers.length)]
+            await leaveChannel(id, botLeaving)
+            console.log("Bot #" + botLeaving + " leaving channel " + id)
+            botMembers.splice(botMembers.indexOf(botLeaving), 1)
+        }
     }
 }
+await updateChannel(channelId)

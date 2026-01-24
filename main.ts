@@ -1,3 +1,5 @@
+import postgres from "postgres"
+const sql = postgres()
 const edgeNodeId = "E09V59WQY1E"
 const tokenFile = await Deno.readTextFile(Deno.env.get("TOKEN_FILE_PATH")!)
 const tokens: { xoxc: string; xoxd: string }[] = []
@@ -165,21 +167,20 @@ async function botMembersOfChannel(id: string) {
     }
     return members
 }
-const channelId = "C09GJU0G43U"
+const channels = await sql`SELECT id FROM channels`
 // await leaveChannelAll(channelId)
 // Deno.exit(0)
 async function updateChannel(id: string) {
     console.log(`Starting channel update in ${id}`)
     const botMembers = await botMembersOfChannel(id)
     let toAdd = await requiredMemberCountChange(id)
-    console.log(`Changing member count in ${id} by ${toAdd}`)
     while (
         toAdd < 0 &&
         -toAdd > botMembers.filter((x) => typeof x == "number").length
     ) {
         toAdd += 100
     }
-    console.log(toAdd)
+    console.log(`Changing member count in ${id} by ${toAdd}`)
     if (toAdd > 0) {
         let skipped = 0
         for (let i = 1; i <= toAdd; i++) {
@@ -197,4 +198,6 @@ async function updateChannel(id: string) {
         }
     }
 }
-await updateChannel(channelId)
+channels.forEach(async (channel) => {
+    await updateChannel(channel.id)
+})

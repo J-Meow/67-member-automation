@@ -1,5 +1,8 @@
 {
     "tasks": {
-        "dev": "deno run --watch --env-file --allow-env --allow-read --allow-net main.ts"
+        "dev": "deno run --watch --env-file --allow-env --allow-read --allow-net --allow-sys main.ts"
+    },
+    "imports": {
+        "postgres": "npm:postgres@^3.4.8"
     }
 }

@@ -1,0 +1,16 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:postgres@^3.4.8": "3.4.8"
+  },
+  "npm": {
+    "postgres@3.4.8": {
+      "integrity": "sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:postgres@^3.4.8"
+    ]
+  }
+}

@@ -230,6 +230,38 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
         const formData = new URLSearchParams(body)
         const text = formData.get("text")
         const channelId = formData.get("channel_id")
+        const userId = formData.get("user_id")
+        console.log(userId)
+        const channelInfo = await (
+            await fetch(
+                "https://slack.com/api/conversations.info?channel=" +
+                    encodeURIComponent(channelId!),
+                {
+                    headers: {
+                        authorization:
+                            "Bearer " + Deno.env.get("SLACK_BOT_XOXB"),
+                    },
+                },
+            )
+        ).json()
+        if (
+            channelInfo.channel.creator != userId &&
+            userId != Deno.env.get("ADMIN_SLACK_ID")
+        ) {
+            console.log(
+                userId +
+                    " attempted to run command in " +
+                    channelId +
+                    " and was blocked",
+            )
+            return new Response(
+                "As you are not the creator of this channel, you are not allowed to use this bot. Please ask <@" +
+                    channelInfo.channel.creator +
+                    "> (the creator of the channel) or <@" +
+                    Deno.env.get("ADMIN_SLACK_ID") +
+                    "> (the creator of the bot) if you'd like to use it.",
+            )
+        }
         switch (text) {
             case "enable":
                 console.log(`Adding ${channelId} to 67ish channels`)

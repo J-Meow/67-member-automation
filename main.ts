@@ -301,7 +301,7 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
                     await sql`INSERT INTO channels VALUES (${channelId})`
                     update()
                     return new Response(
-                        "Success, this channel will have 67 members shortly.",
+                        "Success, this channel will have 67 members shortly. To update the member count, please add this bot to the channel, or run `/67members update` whenever you'd like to change it back.",
                     )
                 } catch (err) {
                     console.error(err)

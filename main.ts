@@ -256,8 +256,6 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
                 }
             }
         }
-        console.log(json)
-        console.log(processingChannels)
         return new Response()
     }
     if (new URL(req.url).pathname == "/command" && req.method == "POST") {

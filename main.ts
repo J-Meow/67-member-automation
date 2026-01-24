@@ -233,16 +233,21 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
         switch (text) {
             case "enable":
                 console.log(`Adding ${channelId} to 67ish channels`)
-                await sql`INSERT INTO channels VALUES (${channelId})`
-                update()
-                return new Response(
-                    "Success, this channel will have 67 members shortly.",
-                )
+                try {
+                    await sql`INSERT INTO channels VALUES (${channelId})`
+                    update()
+                    return new Response(
+                        "Success, this channel will have 67 members shortly.",
+                    )
+                } catch (err) {
+                    console.error(err)
+                    return new Response("Channel is already enabled!")
+                }
             case "disable":
                 console.log(`Removing ${channelId} from 67ish channels`)
                 await sql`DELETE FROM channels WHERE ID=${channelId}`
                 return new Response(
-                    "Success, this channel will no longer automatically update to have 67 members. If you'd like the alt accounts to leave, run `/67members leave`.",
+                    "Success, this channel will no longer automatically update to have 67 members. If you'd like the alt accounts to leave, run `/67members leave`.\n(This message shows even if the bot wasn't enabled in the first place)",
                 )
             case "leave":
                 console.log(`Removing alts from ${channelId}`)
@@ -250,6 +255,9 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
                 leaveChannelAll(channelId!)
                 return new Response("Alt accounts leaving.")
             default:
+                return new Response(
+                    "Invalid command. Please use `/67members [enable/disable/leave]`.",
+                )
         }
     }
     return new Response(null, { status: 404 })

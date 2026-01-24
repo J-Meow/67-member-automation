@@ -11,7 +11,7 @@ tokenFile
         const values = line.split(" ")
         tokens[parseInt(values[0])] = { xoxc: values[2], xoxd: values[3] }
     })
-const doTokenCheck = false
+const doTokenCheck = true
 for (let i = 1; i <= 99 && doTokenCheck; i++) {
     try {
         const userBootResponse = await (

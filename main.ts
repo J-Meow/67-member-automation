@@ -170,7 +170,9 @@ async function botMembersOfChannel(id: string) {
 }
 // await leaveChannelAll(channelId)
 // Deno.exit(0)
+const processingChannels: string[] = []
 async function updateChannel(id: string) {
+    processingChannels.push(id)
     console.log(`Starting channel update in ${id}`)
     const botMembers = await botMembersOfChannel(id)
     let toAdd = await requiredMemberCountChange(id)
@@ -197,6 +199,7 @@ async function updateChannel(id: string) {
             botMembers.splice(botMembers.indexOf(botLeaving), 1)
         }
     }
+    processingChannels.splice(processingChannels.indexOf(id), 1)
 }
 async function update() {
     const channels = await sql`SELECT id FROM channels`
@@ -206,8 +209,12 @@ async function update() {
 }
 const slackSigningSecret = Deno.env.get("SLACK_SIGNING_SECRET")!
 Deno.serve({ port: 11205 }, async (req: Request) => {
-    if (new URL(req.url).pathname == "/command" && req.method == "POST") {
-        const body = await req.text()
+    const body = await req.text()
+    if (
+        (new URL(req.url).pathname == "/command" ||
+            new URL(req.url).pathname == "/events") &&
+        req.method == "POST"
+    ) {
         const timestamp = req.headers.get("x-slack-request-timestamp")!
         const signature = req.headers.get("x-slack-signature")!
         if (!timestamp || !signature) {
@@ -227,6 +234,33 @@ Deno.serve({ port: 11205 }, async (req: Request) => {
         if (correctSignature != signature) {
             return new Response(null, { status: 400 })
         }
+    }
+    if (new URL(req.url).pathname == "/events" && req.method == "POST") {
+        const json = JSON.parse(body)
+        if (json.type == "url_verification") {
+            console.log("Slack verification success")
+            return new Response(json.challenge)
+        }
+        if (json.type == "event_callback") {
+            const event = json.event
+            if (
+                (event.type == "member_joined_channel" ||
+                    event.type == "member_left_channel") &&
+                !processingChannels.includes(event.channel)
+            ) {
+                const channels =
+                    await sql`SELECT id FROM channels WHERE id=${event.channel}`
+                if (channels.count) {
+                    console.log("New member in " + event.channel + ", updating")
+                    updateChannel(event.channel)
+                }
+            }
+        }
+        console.log(json)
+        console.log(processingChannels)
+        return new Response()
+    }
+    if (new URL(req.url).pathname == "/command" && req.method == "POST") {
         const formData = new URLSearchParams(body)
         const text = formData.get("text")
         const channelId = formData.get("channel_id")
